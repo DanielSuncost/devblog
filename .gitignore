@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.venv/
+.env
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.DS_Store
+
+# Runtime state when testing this repo against itself
+.devblog/state.json
+.devblog/ledger.jsonl
+.devblog/entries/
+.devblog/*.log

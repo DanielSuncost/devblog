@@ -1,0 +1,85 @@
+{
+  "version": "1",
+  "repo": {
+    "path": "/home/dopppo/Projects/charon",
+    "default_branch": "main"
+  },
+  "tracking": {
+    "mode": "background_daemon",
+    "poll_interval_seconds": 60,
+    "retention_days": 30,
+    "capture": {
+      "git_status": true,
+      "commits": true,
+      "diff_stats": true,
+      "file_snippets": true,
+      "test_events": true,
+      "command_events": false
+    }
+  },
+  "schedule": {
+    "cadence": "every 12h",
+    "timezone": "UTC",
+    "window_strategy": "from_last_successful_entry"
+  },
+  "content": {
+    "audience": "internal",
+    "style": "engineering-update",
+    "sections": [
+      "tldr",
+      "activity_pulse",
+      "what_changed",
+      "why_it_matters",
+      "risks_and_followups",
+      "metrics",
+      "next_window"
+    ],
+    "max_words": 1000,
+    "redaction": {
+      "enabled": true,
+      "patterns": [
+        "(?i)(api[_-]?key|token|secret|password)\\s*[:=]\\s*[^\\s]+"
+      ],
+      "replacement": "[REDACTED]"
+    }
+  },
+  "output": {
+    "entry_dir": ".devblog/entries",
+    "filename_template": "{{until_utc}}-devlog.md",
+    "state_file": ".devblog/state.json",
+    "ledger_file": ".devblog/ledger.jsonl",
+    "index_file": ".devblog/INDEX.md",
+    "auto_commit": false,
+    "commit_message_template": "docs(devblog): {{until_utc}} development log"
+  },
+  "generation": {
+    "default": {
+      "provider": "openrouter",
+      "model": "google/gemini-2.0-flash-lite"
+    },
+    "hosts": {
+      "hermes": {
+        "provider": "openrouter",
+        "model": "google/gemini-2.0-flash-lite"
+      },
+      "charon": {
+        "provider": "openrouter",
+        "model": "google/gemini-2.0-flash-lite"
+      },
+      "pi-agent": {
+        "provider": "openrouter",
+        "model": "google/gemini-2.0-flash-lite"
+      },
+      "claude-code": {
+        "model": "haiku"
+      },
+      "codex": {
+        "provider": "openrouter",
+        "model": "openai/gpt-4.1-mini"
+      },
+      "opencode": {
+        "model": "openrouter/google/gemini-2.0-flash-lite"
+      }
+    }
+  }
+}

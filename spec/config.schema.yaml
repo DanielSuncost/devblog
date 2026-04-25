@@ -1,0 +1,184 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: DevBlogConfig
+version: "1"
+description: |
+  Continuous development blog configuration. This is not a generic content blog.
+  It runs during active coding, captures project activity in the background,
+  and periodically compiles clear devlog entries from tracked evidence.
+type: object
+additionalProperties: false
+required: [version, repo, tracking, schedule, output, content]
+properties:
+  version:
+    type: string
+    const: "1"
+
+  repo:
+    type: object
+    additionalProperties: false
+    required: [path, default_branch]
+    properties:
+      path:
+        type: string
+        description: Absolute path to repository root.
+      default_branch:
+        type: string
+      worktree_mode:
+        type: boolean
+        default: false
+
+  tracking:
+    type: object
+    additionalProperties: false
+    required: [mode, poll_interval_seconds, capture]
+    properties:
+      mode:
+        type: string
+        enum: [background_daemon]
+        default: background_daemon
+      poll_interval_seconds:
+        type: integer
+        minimum: 5
+        maximum: 3600
+        default: 60
+      capture:
+        type: object
+        additionalProperties: false
+        required: [git_status, commits, diff_stats]
+        properties:
+          git_status:
+            type: boolean
+            default: true
+          commits:
+            type: boolean
+            default: true
+          diff_stats:
+            type: boolean
+            default: true
+          file_snippets:
+            type: boolean
+            default: true
+          test_events:
+            type: boolean
+            default: true
+          command_events:
+            type: boolean
+            default: false
+      retention_days:
+        type: integer
+        minimum: 1
+        maximum: 365
+        default: 30
+
+  schedule:
+    type: object
+    additionalProperties: false
+    required: [cadence, timezone]
+    properties:
+      cadence:
+        type: string
+        examples: ["every 12h", "0 */12 * * *"]
+      timezone:
+        type: string
+        default: UTC
+      window_strategy:
+        type: string
+        enum: [from_last_successful_entry]
+        default: from_last_successful_entry
+
+  content:
+    type: object
+    additionalProperties: false
+    required: [audience, style, sections]
+    properties:
+      audience:
+        type: string
+        enum: [internal, public]
+      style:
+        type: string
+        enum: [engineering-update, release-note, research-log, narrative]
+      sections:
+        type: array
+        minItems: 4
+        items:
+          type: string
+          enum:
+            - tldr
+            - activity_pulse
+            - what_changed
+            - why_it_matters
+            - risks_and_followups
+            - metrics
+            - next_window
+      max_words:
+        type: integer
+        minimum: 200
+        maximum: 3000
+        default: 1000
+      redaction:
+        type: object
+        additionalProperties: false
+        properties:
+          enabled:
+            type: boolean
+            default: true
+          patterns:
+            type: array
+            items: {type: string}
+          replacement:
+            type: string
+            default: "[REDACTED]"
+
+  output:
+    type: object
+    additionalProperties: false
+    required: [entry_dir, filename_template, state_file, ledger_file]
+    properties:
+      entry_dir:
+        type: string
+        default: .devblog/entries
+      filename_template:
+        type: string
+        default: "{{until_utc}}-devlog.md"
+      state_file:
+        type: string
+        default: .devblog/state.json
+      ledger_file:
+        type: string
+        default: .devblog/ledger.jsonl
+      index_file:
+        type: string
+        default: .devblog/INDEX.md
+      auto_commit:
+        type: boolean
+        default: false
+      commit_message_template:
+        type: string
+        default: "docs(devblog): {{until_utc}} development log"
+
+
+  generation:
+    type: object
+    additionalProperties: false
+    properties:
+      default:
+        type: object
+        additionalProperties: true
+        properties:
+          provider: {type: [string, 'null']}
+          model: {type: [string, 'null']}
+      hosts:
+        type: object
+        additionalProperties:
+          type: object
+          additionalProperties: true
+          properties:
+            provider: {type: [string, 'null']}
+            model: {type: [string, 'null']}
+        properties:
+          pi-agent: {type: object}
+          hermes: {type: object}
+          claude-code: {type: object}
+          codex: {type: object}
+          opencode: {type: object}
+          charon: {type: object}

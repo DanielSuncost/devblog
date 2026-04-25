@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DevBlogState",
+  "description": "State for continuous background tracking + periodic entry generation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "repo_path", "tracker", "last_entry", "history"],
+  "properties": {
+    "version": { "type": "string", "const": "1" },
+    "repo_path": { "type": "string" },
+    "tracker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "last_poll_at", "cursor"],
+      "properties": {
+        "status": { "type": "string", "enum": ["running", "stopped", "error"] },
+        "last_poll_at": { "type": "string", "format": "date-time" },
+        "cursor": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["head_sha", "last_seen_commit_sha"],
+          "properties": {
+            "head_sha": { "type": "string" },
+            "last_seen_commit_sha": { "type": "string" },
+            "last_seen_status_hash": { "type": "string" }
+          }
+        },
+        "active_run_id": { "type": "string" },
+        "lock_expires_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "last_entry": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "generated_at": { "type": "string", "format": "date-time" },
+        "since_ref": { "type": "string" },
+        "until_ref": { "type": "string" },
+        "entry_path": { "type": "string" },
+        "window_hash": { "type": "string" },
+        "status": { "type": "string", "enum": ["success", "no_changes"] }
+      }
+    },
+    "history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["at", "since_ref", "until_ref", "status"],
+        "properties": {
+          "at": { "type": "string", "format": "date-time" },
+          "since_ref": { "type": "string" },
+          "until_ref": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["success", "no_changes", "failed", "skipped_duplicate"]
+          },
+          "entry_path": { "type": "string" },
+          "window_hash": { "type": "string" },
+          "error": { "type": "string" },
+          "run_id": { "type": "string" }
+        }
+      }
+    }
+  }
+}

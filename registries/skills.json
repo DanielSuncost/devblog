@@ -1,0 +1,36 @@
+{
+  "skills": [
+    {
+      "name": "devblog",
+      "description": "Cross-agent background development blog tracker/generator for active coding projects.",
+      "version": "0.1.0",
+      "path": "registries/SKILL.md",
+      "tags": [
+        "devblog",
+        "development-log",
+        "background-tracking",
+        "cron",
+        "documentation",
+        "cross-agent"
+      ],
+      "compatible_hosts": [
+        "hermes",
+        "claude-code",
+        "codex",
+        "opencode",
+        "pi-agent",
+        "charon"
+      ],
+      "commands": [
+        "devblog init",
+        "devblog track",
+        "devblog entry",
+        "devblog note",
+        "devblog model",
+        "devblog status",
+        "devblog review",
+        "devblog publish"
+      ]
+    }
+  ]
+}

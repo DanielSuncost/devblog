@@ -1,0 +1,25 @@
+[project]
+name = "devblog-agent"
+version = "0.1.0"
+description = "Cross-agent background development blog tracker and generator"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "DevBlog contributors"}]
+keywords = ["agents", "devlog", "blog", "hermes", "claude-code", "codex", "charon"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Software Development :: Documentation"
+]
+dependencies = []
+
+[project.scripts]
+devblog = "devblog.cli:main"
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"

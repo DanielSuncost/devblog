@@ -1,0 +1,17 @@
+# Proposed Charon task definitions for native integration.
+# Charon should call the shared CLI, not fork the file format.
+
+tasks:
+  - name: devblog-tracker
+    kind: daemon
+    command: python tools/devblog/devblog.py track --repo /home/dopppo/Projects/charon
+    cwd: /home/dopppo/Projects/charon
+    restart: on-failure
+    purpose: Continuously observe git/project activity during active development.
+
+  - name: devblog-entry-12h
+    kind: schedule
+    schedule: every 12h
+    command: python tools/devblog/devblog.py entry --repo /home/dopppo/Projects/charon
+    cwd: /home/dopppo/Projects/charon
+    purpose: Compile tracked evidence into a readable development log entry.

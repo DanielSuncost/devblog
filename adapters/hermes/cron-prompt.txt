@@ -1,0 +1,12 @@
+In /home/dopppo/Projects/charon, generate the scheduled DevBlog entry using the shared cross-agent framework.
+
+Run:
+1. python tools/devblog/devblog.py track --repo /home/dopppo/Projects/charon --once
+2. python tools/devblog/devblog.py entry --repo /home/dopppo/Projects/charon
+3. python tools/devblog/devblog.py status --repo /home/dopppo/Projects/charon
+
+Rules:
+- Use .devblog/config.json or .devblog/config.example.json.
+- Preserve .devblog/state.json idempotency.
+- If the CLI says skipped duplicate, report that instead of forcing a new post.
+- Do not create a generic blog; this is a background-tracked development log.
