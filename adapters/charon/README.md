@@ -1,21 +1,18 @@
-# Charon adapter
+# DevBlog for Charon
 
-Charon is the best long-term host for DevBlog because it already wants persistent project agents.
-The integration should map directly onto Charon concepts:
+Charon should treat DevBlog as a project-level capability:
 
-- tracker daemon = persistent Charon project watcher
-- entry generator = scheduled project task
-- ledger = auditable project memory stream
-- entry markdown = human-facing project progress artifact
+- tracker daemon: captures project evidence;
+- scheduled task: writes a development entry;
+- dashboard surface: reads `.devblog/entries/*.md` and `.devblog/ledger.jsonl`.
 
-Do not make Charon-specific state that Hermes/Claude/Codex cannot read. Add richer Charon UI on top of the same `.devblog/*` files.
-
-## Multi-agent notes and model routing
+Install into a project with:
 
 ```bash
-devblog model --repo . --host charon
-devblog note --repo . --host charon --agent AGENT --area AREA --message "What changed."
-devblog entry --repo . --host charon
+devblog init --repo /abs/repo
+devblog install-adapter --repo /abs/repo --host charon
 ```
 
-Use `.devblog/config.json` generation settings for cheap model routing where the host supports provider/model selection.
+Import or translate `charon-devblog.tasks.yaml` into Charon's scheduler/task
+registry. Charon-specific UI can be added on top, but the source of truth stays
+in `.devblog/*`.

@@ -52,6 +52,17 @@ devblog entry --repo /path/to/project --host hermes
 devblog publish --repo /path/to/project --format public-md -o /path/to/project/devblog.md
 ```
 
+## Agent plugins and install guidance
+
+DevBlog ships thin adapter/plugin files for each host. Install them into any project with:
+
+```bash
+devblog init --repo /abs/project
+devblog install-adapter --repo /abs/project --host all
+```
+
+That writes host-specific prompts, task files, and instruction snippets under `.devblog/adapters/<host>/` for Hermes, Charon, Pi Agent, Claude Code, Codex, and OpenCode. See [`docs/integrations.md`](docs/integrations.md) for per-agent setup.
+
 ## Cron-style use
 
 A typical scheduled run captures the latest evidence, writes one entry for the current window, and exports a public copy:

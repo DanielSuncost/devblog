@@ -1,52 +1,113 @@
-# Adapter command examples (Hermes, Claude Code, Charon)
+# Adapter/plugin architecture
 
-Goal: keep one shared format (`.devblog/*`) and use thin runtime adapters.
+DevBlog adapters are intentionally thin. They install host-specific prompts, task definitions, or instruction snippets, but all hosts share the same CLI and `.devblog/*` state.
 
 ## Shared contract
-All adapters should call:
 
-`devblog track`   -> background tracker loop
-`devblog entry`   -> generate a periodic devlog from tracked ledger + git window
+Every adapter must call the shared CLI:
 
-Both commands read `.devblog/config.yaml` and update `.devblog/state.json` + `.devblog/ledger.jsonl`.
+```bash
+devblog track --repo /abs/repo --once
+devblog entry --repo /abs/repo --host HOST
+devblog publish --repo /abs/repo --format public-md -o /abs/repo/.devblog/public/latest.md
+```
 
-## Hermes adapter
-1) Start tracker (long-running background process):
+Every adapter must preserve these files:
 
-terminal(command="devblog track --repo /abs/repo", background=true, notify_on_complete=false)
+```text
+.devblog/config.json
+.devblog/state.json
+.devblog/ledger.jsonl
+.devblog/entries/*.md
+```
 
-2) Schedule entry generation every 12h (cronjob tool):
+Host-specific plugin files live under `.devblog/adapters/<host>/`.
 
-cronjob(action="create", name="devblog-12h", schedule="every 12h", prompt="In /abs/repo, run devblog entry and write/update .devblog/entries using .devblog/config.yaml. If no changes since last entry, record no_changes in .devblog/state.json.", enabled_toolsets=["terminal","file"])
+## Installing adapters
 
-## Claude Code adapter
-Use system cron (or CI scheduler) for portability:
+```bash
+devblog init --repo /abs/repo
+devblog install-adapter --repo /abs/repo --host all
+```
 
-- Tracker:
-  `@reboot cd /abs/repo && devblog track --repo /abs/repo >> .devblog/tracker.log 2>&1`
+Supported hosts:
 
-- 12h entry:
-  `0 */12 * * * cd /abs/repo && claude -p "Run devblog entry for this repo using .devblog/config.yaml and update .devblog/state.json" --max-turns 8 >> .devblog/entry.log 2>&1`
+- `hermes`
+- `charon`
+- `pi-agent`
+- `claude-code`
+- `codex`
+- `opencode`
 
-## Charon adapter
-Charon scheduler should treat tracker + entry as two tasks:
+Use `--force` to overwrite previously generated adapter files.
 
-- Persistent task:
-  `name: devblog-tracker`
-  `kind: daemon`
-  `command: devblog track --repo /abs/repo`
+## Hermes
 
-- Periodic task:
-  `name: devblog-entry-12h`
-  `kind: schedule`
-  `schedule: every 12h`
-  `command: devblog entry --repo /abs/repo`
+Hermes uses a cron job and terminal/file tools. The installed plugin files are:
+
+```text
+.devblog/adapters/hermes/README.md
+.devblog/adapters/hermes/cron-prompt.txt
+.devblog/adapters/hermes/cronjob.example.json
+```
+
+Schedule `cron-prompt.txt` every 12 hours. Recommended toolsets: `terminal,file`.
+
+## Charon
+
+Charon maps DevBlog onto native persistent project tasks:
+
+```text
+.devblog/adapters/charon/README.md
+.devblog/adapters/charon/charon-devblog.tasks.yaml
+```
+
+Charon should run the tracker as a daemon and the entry/public export as scheduled tasks. Charon dashboards can read `.devblog/ledger.jsonl` and `.devblog/entries/*.md` directly.
+
+## Pi Agent
+
+Pi Agent uses a recurring prompt and optional conversation context capture:
+
+```text
+.devblog/adapters/pi-agent/README.md
+.devblog/adapters/pi-agent/pi-devblog.prompt.md
+```
+
+The Pi prompt should save available context to a temp file and pass it to `devblog note --host pi-agent --context-file TEMPFILE` before entry generation.
+
+## Claude Code
+
+Claude Code uses project instructions and a reusable command prompt:
+
+```text
+.devblog/adapters/claude-code/README.md
+.devblog/adapters/claude-code/CLAUDE.devblog.md
+.devblog/adapters/claude-code/command-devblog.md
+```
+
+Include `CLAUDE.devblog.md` from the project `CLAUDE.md` or paste it into the Claude Code project instructions. Use `command-devblog.md` as a `/devblog` command body.
+
+## Codex
+
+Codex uses AGENTS instructions and a one-shot command prompt:
+
+```text
+.devblog/adapters/codex/README.md
+.devblog/adapters/codex/AGENTS.devblog.md
+.devblog/adapters/codex/codex-command.txt
+```
+
+Include `AGENTS.devblog.md` from the project `AGENTS.md`.
+
+## OpenCode
+
+OpenCode uses a reusable run prompt:
+
+```text
+.devblog/adapters/opencode/README.md
+.devblog/adapters/opencode/opencode-command.txt
+```
 
 ## Compatibility rule
-If adapters differ, file formats win:
-- `.devblog/config.yaml`
-- `.devblog/state.json`
-- `.devblog/ledger.jsonl`
-- `.devblog/entries/*.md`
 
-As long as these stay stable, Hermes/Claude/Charon can interoperate.
+If adapters disagree, the file contract wins. Adapters may evolve independently, but they must not fork the ledger, state, config, or entry formats.

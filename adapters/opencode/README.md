@@ -1,11 +1,11 @@
-# OpenCode adapter
+# DevBlog for OpenCode
 
-OpenCode should use the shared DevBlog CLI and file contract.
+OpenCode can use DevBlog through a reusable project prompt and the shared CLI.
+Install into a project with:
 
 ```bash
-devblog model --repo . --host opencode
-opencode run "Use DevBlog to track once and write an entry" --model openrouter/google/gemini-2.0-flash-lite
-devblog note --repo . --host opencode --agent frontend --area frontend --message "Built UI shell."
+devblog init --repo /abs/repo
+devblog install-adapter --repo /abs/repo --host opencode
 ```
 
-Do not create OpenCode-specific state. Use `.devblog/state.json`, `.devblog/ledger.jsonl`, and `.devblog/entries/*.md`.
+Use `opencode-command.txt` for one-shot execution and keep all state in `.devblog/*`.

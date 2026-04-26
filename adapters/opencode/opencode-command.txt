@@ -1,0 +1,1 @@
+opencode run "Run devblog track --repo . --once, then devblog entry --repo . --host opencode, then devblog publish --repo . --format public-md -o .devblog/public/latest.md. Preserve DevBlog idempotency and do not invent changes."

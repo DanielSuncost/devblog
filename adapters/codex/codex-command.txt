@@ -1,1 +1,1 @@
-codex exec 'Run python tools/devblog/devblog.py track --repo . --once, then python tools/devblog/devblog.py entry --repo ., then report the generated .devblog entry path. Preserve DevBlog state/idempotency.'
+codex exec "Run devblog track --repo . --once, then devblog entry --repo . --host codex, then devblog publish --repo . --format public-md -o .devblog/public/latest.md, then report the generated entry path. Preserve DevBlog idempotency and do not invent changes."

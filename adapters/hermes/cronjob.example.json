@@ -1,0 +1,6 @@
+{
+  "name": "devblog-hermes-12h",
+  "schedule": "every 12h",
+  "enabled_toolsets": ["terminal", "file"],
+  "prompt_file": ".devblog/adapters/hermes/cron-prompt.txt"
+}

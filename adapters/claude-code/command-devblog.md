@@ -1,8 +1,8 @@
-Run the shared DevBlog workflow for this repository:
+Run the DevBlog workflow for this repository:
 
-1. Execute `python tools/devblog/devblog.py track --repo . --once`.
-2. Execute `python tools/devblog/devblog.py entry --repo .`.
-3. Execute `python tools/devblog/devblog.py status --repo .`.
-4. Summarize the generated entry path or explain why it was skipped.
+1. `devblog track --repo . --once`
+2. `devblog entry --repo . --host claude-code`
+3. `devblog publish --repo . --format public-md -o .devblog/public/latest.md`
+4. `devblog status --repo .`
 
-Do not invent changes outside git and `.devblog/ledger.jsonl`.
+Summarize the generated entry path, public export path, or duplicate/no-change status.

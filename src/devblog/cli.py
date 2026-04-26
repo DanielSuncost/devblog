@@ -308,6 +308,256 @@ def cmd_model(args: argparse.Namespace) -> int:
     print(json.dumps(gen, indent=2))
     return 0
 
+
+ADAPTER_INSTALL_FILES: dict[str, dict[str, str]] = {
+    "hermes": {
+        "README.md": """# DevBlog for Hermes
+
+Hermes should use DevBlog as a shared project tool, not as Hermes-only state.
+
+Install the package somewhere on PATH, then initialize the target repo:
+
+```bash
+devblog init --repo /abs/repo
+devblog install-adapter --repo /abs/repo --host hermes
+```
+
+Create a Hermes cron job using `cron-prompt.txt`, usually on `every 12h`, with
+`terminal,file` toolsets enabled. The prompt runs `track --once`, `entry`,
+`publish`, and `status` against the same `.devblog/*` files used by every host.
+""",
+        "cron-prompt.txt": """Generate the scheduled DevBlog entry for this repo.
+
+Repository: {repo}
+Host: hermes
+
+Run these commands from the repository:
+1. devblog track --repo {repo} --once
+2. devblog entry --repo {repo} --host hermes
+3. devblog publish --repo {repo} --format public-md -o {repo}/.devblog/public/latest.md
+4. devblog status --repo {repo}
+
+Rules:
+- Preserve `.devblog/state.json` idempotency; do not force duplicate windows.
+- Use only git history and `.devblog/ledger.jsonl` evidence.
+- If no new entry is generated, report the duplicate/no-change status.
+""",
+        "cronjob.example.json": """{{
+  "name": "devblog-hermes-12h",
+  "schedule": "every 12h",
+  "enabled_toolsets": ["terminal", "file"],
+  "prompt_file": ".devblog/adapters/hermes/cron-prompt.txt"
+}}
+""",
+    },
+    "charon": {
+        "README.md": """# DevBlog for Charon
+
+Charon should treat DevBlog as a project-level capability:
+
+- tracker daemon: captures project evidence;
+- scheduled task: writes a development entry;
+- dashboard surface: reads `.devblog/entries/*.md` and `.devblog/ledger.jsonl`.
+
+Install into a project with:
+
+```bash
+devblog init --repo /abs/repo
+devblog install-adapter --repo /abs/repo --host charon
+```
+
+Import or translate `charon-devblog.tasks.yaml` into Charon's scheduler/task
+registry. Charon-specific UI can be added on top, but the source of truth stays
+in `.devblog/*`.
+""",
+        "charon-devblog.tasks.yaml": """tasks:
+  - name: devblog-tracker
+    kind: daemon
+    cwd: {repo}
+    command: devblog track --repo {repo}
+    restart: on-failure
+    purpose: Continuously observe git/project activity for DevBlog.
+
+  - name: devblog-entry-12h
+    kind: schedule
+    schedule: every 12h
+    cwd: {repo}
+    command: devblog track --repo {repo} --once && devblog entry --repo {repo} --host charon
+    purpose: Compile tracked evidence into a readable development log entry.
+
+  - name: devblog-public-export
+    kind: schedule
+    schedule: every 12h
+    cwd: {repo}
+    command: devblog publish --repo {repo} --format public-md -o {repo}/.devblog/public/latest.md
+    purpose: Export the latest public-safe post for dashboards or publishing.
+""",
+    },
+    "pi-agent": {
+        "README.md": """# DevBlog for Pi Agent
+
+Pi Agent can use DevBlog by invoking the shared CLI and passing conversation
+context through `devblog note --context-file`.
+
+Install into a project with:
+
+```bash
+devblog init --repo /abs/repo
+devblog install-adapter --repo /abs/repo --host pi-agent
+```
+
+Use `pi-devblog.prompt.md` as the recurring task prompt. Pi/Hermes/Charon-style
+hosts can share provider/model routing through `.devblog/config.json`.
+""",
+        "pi-devblog.prompt.md": """You are maintaining a DevBlog for {repo}.
+
+On each scheduled run:
+1. Run `devblog track --repo {repo} --once`.
+2. If conversation context is available, save it to a temp file and run
+   `devblog note --repo {repo} --host pi-agent --context-file TEMPFILE`.
+3. Run `devblog entry --repo {repo} --host pi-agent`.
+4. Run `devblog publish --repo {repo} --format public-md -o {repo}/.devblog/public/latest.md`.
+5. Report the generated entry path.
+
+Do not invent changes outside git history, tests, and `.devblog/ledger.jsonl`.
+""",
+    },
+    "claude-code": {
+        "README.md": """# DevBlog for Claude Code
+
+Claude Code can participate through a project instruction file and slash-command
+style prompt. DevBlog remains a CLI/file-contract tool; Claude is just one host.
+
+Install into a project with:
+
+```bash
+devblog init --repo /abs/repo
+devblog install-adapter --repo /abs/repo --host claude-code
+```
+
+Copy or include `CLAUDE.devblog.md` from this directory in your project-level
+`CLAUDE.md`, and use `command-devblog.md` as the body of a `/devblog` command or
+manual prompt.
+""",
+        "CLAUDE.devblog.md": """# DevBlog project instructions
+
+This repo uses DevBlog for evidence-based development posts.
+
+When asked to update DevBlog:
+- run `devblog track --repo . --once`;
+- add relevant context with `devblog note --repo . --host claude-code --agent claude --area AREA --message "..."`;
+- run `devblog entry --repo . --host claude-code`;
+- run `devblog publish --repo . --format public-md -o .devblog/public/latest.md` if a public export is needed.
+
+Rules:
+- Source of truth is `.devblog/config.json`, `.devblog/state.json`, `.devblog/ledger.jsonl`, and `.devblog/entries/`.
+- Do not force duplicate entries unless explicitly asked.
+- Do not invent changes beyond git/test/ledger evidence.
+""",
+        "command-devblog.md": """Run the DevBlog workflow for this repository:
+
+1. `devblog track --repo . --once`
+2. `devblog entry --repo . --host claude-code`
+3. `devblog publish --repo . --format public-md -o .devblog/public/latest.md`
+4. `devblog status --repo .`
+
+Summarize the generated entry path, public export path, or duplicate/no-change status.
+""",
+    },
+    "opencode": {
+        "README.md": """# DevBlog for OpenCode
+
+OpenCode can use DevBlog through a reusable project prompt and the shared CLI.
+Install into a project with:
+
+```bash
+devblog init --repo /abs/repo
+devblog install-adapter --repo /abs/repo --host opencode
+```
+
+Use `opencode-command.txt` for one-shot execution and keep all state in `.devblog/*`.
+""",
+        "opencode-command.txt": """opencode run "Run devblog track --repo . --once, then devblog entry --repo . --host opencode, then devblog publish --repo . --format public-md -o .devblog/public/latest.md. Preserve DevBlog idempotency and do not invent changes."
+""",
+    },
+    "codex": {
+        "README.md": """# DevBlog for Codex
+
+Codex can use DevBlog through AGENTS instructions plus a reusable command prompt.
+The CLI and `.devblog/*` files remain shared with every other host.
+
+Install into a project with:
+
+```bash
+devblog init --repo /abs/repo
+devblog install-adapter --repo /abs/repo --host codex
+```
+
+Copy or include `AGENTS.devblog.md` from this directory in the repo's `AGENTS.md`.
+Use `codex-command.txt` for one-shot execution.
+""",
+        "AGENTS.devblog.md": """# DevBlog instructions for Codex
+
+This repo uses DevBlog for scheduled, evidence-based development posts.
+
+Use these commands:
+- `devblog track --repo . --once`
+- `devblog note --repo . --host codex --agent codex --area AREA --message "..."`
+- `devblog entry --repo . --host codex`
+- `devblog publish --repo . --format public-md -o .devblog/public/latest.md`
+- `devblog status --repo .`
+
+Rules:
+- Preserve `.devblog/state.json` idempotency.
+- Use git history, tests, and `.devblog/ledger.jsonl`; do not invent progress.
+- Keep compatibility with Hermes, Charon, Pi Agent, and Claude Code.
+""",
+        "codex-command.txt": """codex exec "Run devblog track --repo . --once, then devblog entry --repo . --host codex, then devblog publish --repo . --format public-md -o .devblog/public/latest.md, then report the generated entry path. Preserve DevBlog idempotency and do not invent changes."
+""",
+    },
+}
+
+
+def render_adapter_template(template: str, repo: Path, host: str) -> str:
+    return template.format(repo=str(repo), host=host)
+
+
+def install_adapter_files(repo: Path, host: str, force: bool = False) -> list[Path]:
+    host = validate_host(host)
+    files = ADAPTER_INSTALL_FILES.get(host)
+    if not files:
+        raise ValueError(f"no installable adapter templates for {host}")
+    written: list[Path] = []
+    base = repo / ".devblog" / "adapters" / host
+    base.mkdir(parents=True, exist_ok=True)
+    for name, template in files.items():
+        path = base / name
+        if path.exists() and not force:
+            continue
+        path.write_text(render_adapter_template(template, repo, host), encoding="utf-8")
+        written.append(path)
+    return written
+
+
+def cmd_install_adapter(args: argparse.Namespace) -> int:
+    repo = Path(args.repo).resolve()
+    if not (repo / ".devblog" / "config.json").exists():
+        init_args = argparse.Namespace(repo=str(repo), default_branch=args.default_branch)
+        cmd_init(init_args)
+    hosts = SUPPORTED_HOSTS if args.host == "all" else (validate_host(args.host),)
+    all_written: list[Path] = []
+    for host in hosts:
+        written = install_adapter_files(repo, host, force=args.force)
+        all_written.extend(written)
+        print(f"{host}: wrote {len(written)} file(s) under {repo / '.devblog' / 'adapters' / host}")
+    if not all_written:
+        print("no files changed (use --force to overwrite existing adapter files)")
+    else:
+        for path in all_written:
+            rel = path.relative_to(repo) if str(path).startswith(str(repo)) else path
+            print(f"  {rel}")
+    return 0
+
 def cmd_init(args: argparse.Namespace) -> int:
     repo = Path(args.repo).resolve()
     (repo/".devblog"/"entries").mkdir(parents=True, exist_ok=True)
@@ -700,6 +950,13 @@ def main(argv=None) -> int:
     p.add_argument("--entry", help="Optional entry path/'latest' to append this note into an existing post")
     p.add_argument("--visibility", default="public", choices=["public", "private"])
     p.set_defaults(fn=cmd_note)
+
+    p = sub.add_parser("install-adapter", help="Install host-specific DevBlog adapter/plugin files into a repo")
+    p.add_argument("--repo", default=".")
+    p.add_argument("--host", default="all", choices=["all", *SUPPORTED_HOSTS], help="Host adapter to install")
+    p.add_argument("--default-branch", default="main", help="Default branch used if init is needed")
+    p.add_argument("--force", action="store_true", help="Overwrite existing adapter files")
+    p.set_defaults(fn=cmd_install_adapter)
 
     p = sub.add_parser("model", help="Show host-specific generation model/provider mapping")
     p.add_argument("--repo", default=".")
