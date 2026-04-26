@@ -1,7 +1,7 @@
 {
   "version": "1",
   "repo": {
-    "path": "/home/dopppo/Projects/charon",
+    "path": "/abs/path/to/project",
     "default_branch": "main"
   },
   "tracking": {
