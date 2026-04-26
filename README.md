@@ -19,15 +19,11 @@ It is not a generic blog prompt. It is a small file contract plus a CLI that Her
 | Model routing | Keep per-host provider/model choices in one project config. |
 | Portable core | Stdlib-first Python CLI; no host-specific lock-in. |
 
-## Screenshots
+## Screenshot
 
-A generated DevBlog entry from the dogfood replay, exported as screenshot-ready HTML:
+A generated DevBlog entry from the dogfood replay, exported as screenshot-ready HTML. It shows the full post, including implementation phases, tests, next steps, and provenance metadata.
 
 ![Generated DevBlog post](docs/screenshots/generated-devblog-post.png)
-
-Lower section with implementation phases, tests, next steps, and provenance metadata:
-
-![Generated DevBlog post lower section](docs/screenshots/generated-devblog-post-lower.png)
 
 ## The file contract
 
