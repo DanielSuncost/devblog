@@ -6,6 +6,31 @@ DevBlog watches what changed in a repository, collects notes from any agent work
 
 It is not a generic blog prompt. It is a small file contract plus a CLI that Hermes, Claude Code, Codex, OpenCode, Pi Agent, Charon, and plain shell scripts can all share.
 
+<p align="center">
+  <a href="https://github.com/NousResearch/hermes-agent"><img alt="Hermes" src="https://img.shields.io/badge/Hermes-Agent-7C3AED?style=for-the-badge&logo=sparkles&logoColor=white"></a>
+  <a href="https://github.com/DanielSuncost/charon"><img alt="Charon" src="https://img.shields.io/badge/Charon-Persistent%20Agents-111827?style=for-the-badge&logo=gnometerminal&logoColor=white"></a>
+  <a href="https://github.com/badlogic/pi-mono"><img alt="Pi Agent" src="https://img.shields.io/badge/Pi-Agent-2563EB?style=for-the-badge&logo=raspberrypi&logoColor=white"></a>
+  <a href="https://github.com/anthropics/claude-code"><img alt="Claude Code" src="https://img.shields.io/badge/Claude-Code-D97706?style=for-the-badge&logo=anthropic&logoColor=white"></a>
+  <a href="https://github.com/openai/codex"><img alt="Codex" src="https://img.shields.io/badge/OpenAI-Codex-10A37F?style=for-the-badge&logo=openai&logoColor=white"></a>
+  <a href="https://github.com/opencode-ai/opencode"><img alt="OpenCode" src="https://img.shields.io/badge/OpenCode-Agent-0EA5E9?style=for-the-badge&logo=opencodeinitiative&logoColor=white"></a>
+</p>
+
+<p align="center">
+  <a href="docs/integrations.md"><strong>Agent integration guide</strong></a>
+  ·
+  <a href="adapters/hermes/README.md">Hermes</a>
+  ·
+  <a href="adapters/charon/README.md">Charon</a>
+  ·
+  <a href="adapters/pi-agent/README.md">Pi Agent</a>
+  ·
+  <a href="adapters/claude-code/README.md">Claude Code</a>
+  ·
+  <a href="adapters/codex/README.md">Codex</a>
+  ·
+  <a href="adapters/opencode/README.md">OpenCode</a>
+</p>
+
 ## What it gives you
 
 | Feature | What it means |
