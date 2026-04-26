@@ -1,130 +1,121 @@
 # DevBlog
 
-Cross-agent development blog framework for active coding projects.
+> A portable, cross-agent development blog for active coding projects.
 
-DevBlog is not a generic blog-writing prompt. It runs during development, tracks project activity in the background, and periodically turns evidence into clear devlog entries.
+DevBlog watches what changed in a repository, collects notes from any agent working on it, and periodically turns that evidence into a clear development post. Use it for private project memory, public build-in-public updates, or a polished blog generated every 12 hours from real repo activity.
 
-It is designed to be shared across:
-- Hermes
-- Claude Code
-- Codex
-- Charon
-- Pi Agent
-- OpenCode
-- any agent that can run a shell command and read files
+It is not a generic blog prompt. It is a small file contract plus a CLI that Hermes, Claude Code, Codex, OpenCode, Pi Agent, Charon, and plain shell scripts can all share.
 
-## Core idea
+## What it gives you
 
-All hosts share one file contract:
+| Feature | What it means |
+| --- | --- |
+| Scheduled dev posts | Generate entries every 12 hours, daily, or on any cron cadence. |
+| Evidence-based writing | Summaries come from git activity, ledger events, tests, and agent notes. |
+| Shared `.devblog/` state | All hosts use the same config, cursor state, ledger, and markdown entries. |
+| Multi-agent notes | Different agents can add tagged context without owning the workflow. |
+| Public/private controls | Mark sensitive blocks private, review them locally, and export public-safe posts. |
+| Publishing formats | Export public markdown, HTML, Substack-ready HTML, or clipboard output. |
+| Model routing | Keep per-host provider/model choices in one project config. |
+| Portable core | Stdlib-first Python CLI; no host-specific lock-in. |
+
+## The file contract
+
+Every project gets the same portable state directory:
 
 ```text
-.devblog/config.json        project config
-.devblog/state.json         idempotency and cursor state
-.devblog/ledger.jsonl       background evidence events
-.devblog/entries/*.md       generated devlog posts
+.devblog/config.json        project config and model policy
+.devblog/state.json         cursors, window hashes, duplicate prevention
+.devblog/ledger.jsonl       evidence events and agent notes
+.devblog/entries/*.md       generated development posts
 ```
 
-All hosts call one CLI:
+Because the state is just files, any agent or cron job can participate.
+
+## Quick start
 
 ```bash
-python -m devblog init --repo /path/to/repo
-python -m devblog track --repo /path/to/repo --once
-python -m devblog track --repo /path/to/repo
-python -m devblog entry --repo /path/to/repo --host hermes
-python -m devblog note --repo /path/to/repo --host claude-code --agent frontend --area frontend --message "Built the UI shell."
-python -m devblog model --repo /path/to/repo --host hermes
-python -m devblog status --repo /path/to/repo
+git clone git@github.com:DanielSuncost/devblog.git
+cd devblog
+python -m pip install -e .
 
-# review, tag, and publish
-python -m devblog review     --repo /path/to/repo            # local web UI on :8780
-python -m devblog visibility --repo /path/to/repo --value mixed
-python -m devblog lint       --repo /path/to/repo
-python -m devblog publish    --repo /path/to/repo --format substack-html -o out.html
+devblog init --repo /path/to/project
+devblog track --repo /path/to/project --once
+devblog note --repo /path/to/project --host hermes --agent core --area backend --message "Finished scheduler integration."
+devblog entry --repo /path/to/project --host hermes
+devblog publish --repo /path/to/project --format public-md -o /path/to/project/devblog.md
 ```
+
+## Cron-style use
+
+A typical scheduled run captures the latest evidence, writes one entry for the current window, and exports a public copy:
+
+```bash
+devblog track --repo /path/to/project --once
+devblog entry --repo /path/to/project --host hermes
+devblog publish --repo /path/to/project --format substack-html -o /path/to/project/out/devblog.html
+```
+
+Run that from Hermes cron, system cron, Charon, or any shell-capable agent every 12 hours.
+
+## Core commands
+
+| Command | Purpose |
+| --- | --- |
+| `init` | Create the `.devblog/` config, state, ledger, and entries directory. |
+| `track` | Capture current project/git evidence once or continuously. |
+| `note` | Append a tagged host/agent/area note to the shared ledger or latest entry. |
+| `entry` | Generate a markdown development post from the current evidence window. |
+| `status` | Show DevBlog state and recent activity. |
+| `model` | Resolve the provider/model/adapter for a given host. |
+| `review` | Open the local review UI for visibility tagging and export. |
+| `visibility` | Set entry or paragraph-level public/private/mixed classification. |
+| `lint` | Flag risky public wording before publishing. |
+| `publish` | Export public-safe markdown, HTML, Substack HTML, or clipboard text. |
 
 ## Multi-agent notes
 
-Multiple agents can contribute to the same DevBlog ledger. Each note is tagged with host, agent, and work area:
-
 ```bash
-devblog note --repo . --host opencode --agent frontend --area frontend --message "Built the dashboard shell."
-devblog note --repo . --host codex --agent backend --area backend --message "Prepared API contract."
+devblog note --repo . --host opencode --agent frontend --area ui --message "Built dashboard shell."
+devblog note --repo . --host codex --agent backend --area api --message "Prepared API contract."
 devblog note --repo . --host pi-agent --context-file conversation.txt
 devblog note --repo . --host charon --agent research --area research --message "Added paper notes." --entry latest
 ```
 
-Supported hosts: `pi-agent`, `hermes`, `claude-code`, `codex`, `opencode`, `charon`.
+Supported hosts: `hermes`, `claude-code`, `codex`, `opencode`, `pi-agent`, and `charon`.
 
-Omit `--agent`, `--area`, or `--message` with `--context-file` to let DevBlog infer them from conversation context. Use `--entry latest` to append a tagged note to an existing entry.
+## Public and private content
 
-## Model/provider selection
-
-DevBlog keeps generation model configuration in `.devblog/config.json` so all host frameworks can share one policy. Hermes, Charon, and Pi Agent can use provider+model pairs; Claude Code generally maps to `--model`; Codex/OpenCode use provider/model config or model flags where supported.
-
-```bash
-devblog model --repo . --host hermes
-devblog entry --repo . --host hermes
-```
-
-## Public / private tagging
-
-Each entry can mix public and private content. Mark blocks with HTML comments
-in the markdown source — they survive every markdown renderer:
+Generated entries can mix shareable and sensitive sections. Wrap private blocks directly in markdown:
 
 ```markdown
 <!-- vis:private -->
-Strategy/secrets/proprietary detail goes here.
+Internal strategy, secrets, or non-public context goes here.
 <!-- /vis -->
 ```
 
-Inline fragments use `<span class="vis-priv">…</span>`. A
-`- Visibility: public|private|mixed` bullet on the entry header tracks the
-overall classification.
-
-The `devblog review` command starts a small local web UI where you can:
-
-- Browse all entries with their public/private/mixed classification
-- Click any block to flip its visibility (saves immediately to the markdown source)
-- Toggle a "Public preview" mode that hides private blocks
-- Export the entry as public markdown, public HTML, paste-ready
-  Substack HTML, or copy to clipboard
-- See lint warnings for risky words (`moat`, `proprietary`, etc.) outside
-  private blocks
-
-See `spec/visibility.md` for the full tagging spec.
-
-## Quick start from source
-
-```bash
-git clone <this repo>
-cd devblog
-python -m pip install -e .
-devblog init --repo /path/to/project
-devblog track --repo /path/to/project --once
-devblog entry --repo /path/to/project
-devblog status --repo /path/to/project
-```
-
-## Why this is plugin-worthy
-
-The wedge is background development tracking:
-- watches git/project activity during coding
-- records a ledger of evidence
-- generates scheduled entries from tracked evidence
-- prevents duplicate posts with state/window hashes
-- lets different agents interoperate through the same files
+`devblog review` provides a local UI to flip visibility, preview the public version, lint risky language, and export publish-ready markdown or HTML.
 
 ## Repository layout
 
 ```text
-src/devblog/                 stdlib-only CLI implementation
-spec/                        shared schemas and architecture
-adapters/                    Hermes, Claude Code, Codex, OpenCode, Pi Agent, Charon adapters
-registries/                  reusable skill registry manifests
-examples/                    example config files
-templates/                   generation prompt/template files
+src/devblog/        stdlib-only CLI implementation
+spec/               schemas, visibility rules, and architecture notes
+adapters/           host integration notes for Hermes, Claude Code, Codex, OpenCode, Pi Agent, Charon
+registries/         reusable skill registry manifests
+examples/           sample configs and usage patterns
+templates/          generation prompts and entry templates
+tests/              behavior tests for visibility, models, and multi-agent notes
 ```
 
-## Status
+## Design principles
 
-MVP scaffold. The CLI currently provides a portable baseline tracker and entry generator. Host agents can improve narrative quality by using `templates/entry-prompt.md` while preserving `.devblog/*` state compatibility.
+- Evidence first: never invent project progress.
+- Compact narratives: explain what changed, why it matters, and what is next.
+- Public-safe publishing: private details stay marked and removable.
+- Cross-agent by default: no host gets special ownership of state.
+- Cheap model routing: use smaller models where they are good enough.
+
+## Current status
+
+Alpha/MVP. The core CLI, shared state format, model routing, multi-agent notes, visibility tags, review/publish flow, and tests are in place. The next layer is deeper host automation and richer scheduled publishing defaults.
